@@ -10,8 +10,9 @@ import pico_wifi
 wifi = pico_wifi.PicoWifi()
 wifi.init()
 ```
+Connect to the wifi network that it stands up ("PicoWifi Adhoc", passwwrd "1234567890").  Open a browser and connect to the IP that has been assigned to the Pico (first value in the tuple, mine defaults to `192.168.4.1`) via http to see the credentials page (e.g. `http://192.168.4.1`).
 
-Connect to the IP that is printed to the console (first value in the tuple, mine defaults to `192.168.4.1`) via http to see the credentials page.
+**CONNECTING VIA `https://` WILL NOT WORK.**  Most browsers will try to do this automatically, so make sure you've added the `http://` explicitly.
 
 Advanced users who want control of how their connection is set up may use the methods exposed on any of the classes below.
 
@@ -199,6 +200,8 @@ Logs are available at different granularities.  They will be printed to console 
 
 Things I came across when building this, and general notes:
 
+* If your `adhoc_password` is less than 8 chars, it won't meet the minimum required for WPA auth and your AP won't work
+* My Pico W seemed unable to connect to a 5 GHz wifi network.  2.4 GHz worked just fine.
 * If you're having trouble determining what's up, try setting the `log_level` parameter to `pico_wifi.LOG_DEBUG` to get more information.
 * After a successful connnection to a network, the Pico will not actually accept new credentials for that same network.  You'll have to remove power from the device to get it to accept new credentials.
 * There is a mysterious status that can be returned from `status()` on the WLAN interface with a value of `2`.  This is between `network.STAT_CONNECTING` and `network.STAT_GOT_IP`.  This library handles this case, but uh... watch out for that.
@@ -209,13 +212,8 @@ Things I came across when building this, and general notes:
 
 * Get `ifconfig` parameters for AP mode working.  Setting a consistent IP is important
   * Blocked on https://github.com/micropython/micropython/issues/17401
-* Prettify the credentials page.  Basic CSS will go a long way
-* Expose the last connection error to the user on the credentials page
-* Document expectations such as "The AP will disconnect" on the user page
 * Write up a guide on how to use `asyncio` to multithread this
 * Any kind of testing.  At all. 
-
-
 
 ## Author's Notes
 

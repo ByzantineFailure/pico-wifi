@@ -294,19 +294,66 @@ class WifiCredentials:
 
 DEFAULT_RESPONSE_PAGE = """<!DOCTYPE html>
 <html>
-    <head> <title>Pico Wifi</title> </head>
-    <body> <h1>Pico Wifi</h1>
-        <p>Hello from Pico W.</p>
+    <head>
+      <title>Pico Wifi</title>
+      <script type="text/javascript">
+        function toggleShowPassword() {
+          const checkbox = document.getElementById("showPassword");
+          const passwordField = document.getElementById("password");
+
+          if (checkbox.checked) {
+            passwordField.setAttribute("type", "text");
+          } else {
+            passwordField.setAttribute("type", "password");
+          }
+        }
+      </script>
+      <style>
+        body {
+          max-width: 480px;
+        }
+        input:focus {
+          outline-offset: 2px;
+          outline: 2px solid;
+        }
+        input[type="submit"] {
+          height: 24px;
+          width: 100px;
+          margin: 20px 0 0 0;
+        }
+        .text-input-label {
+          font-weight: bold;
+        }
+        .form-row {
+          margin: 4px 0 4px 0;
+        }
+        .checkbox-row {
+          margin: 8px 0 4px 0;
+        }
+      </style>
+    </head>
+    <body>
+        <h1>Pico Wifi</h1>
+        <h2>If you used <code>init()</code>:</h2>
+        <p>When the form is submitted, the AP will turn off and the Pico will attempt to connect to wifi.
+          If the connection fails, the AP will turn back on and this page will be served again.</p>
+        <h2>Provide your SSID and Password</h2>
         <form action="/" method="POST">
-          <div>
-            <label for="ssid">SSID:</label>
+          <div class="form-row">
+            <label class="text-input-label" for="ssid">SSID</label>
+            <br/>
             <input name="ssid" id="ssid" type="text"/>
           </div>
-          <div>
-            <label for="password">Password:</label>
-            <input name="password" id="password" type="text"/>
+          <div class="form-row">
+            <label class="text-input-label" for="password">Password</label>
+            <br/>
+            <input name="password" id="password" type="password"/>
           </div>
-          <div>
+          <div class="checkbox-row">
+            <label for="showPassword">Show Password</label>:
+            <input name="showPassword" id="showPassword" type="checkbox" onchange="toggleShowPassword()"/>
+          </div>
+          <div class="form-row">
             <input type="submit" value="Connect" />
           </div>
         </form>
