@@ -26,13 +26,13 @@ LOG_DEBUG = 4
 # Should probably be a singleton since it has access to the network hardware
 class PicoWifi:
     def __init__(self,
-                 credentials_file=DEFAULT_CREDENTIAL_LOCATION,
-                 connection_timeout=DEFAULT_CONNECTION_TIMEOUT_SECONDS,
-                 adhoc_ifconfig=DEFAULT_ADHOC_IFCONFIG,
-                 adhoc_ssid=DEFAULT_ADHOC_SSID,
-                 adhoc_password=DEFAULT_ADHOC_PASSWORD,
-                 credentials_page_server_port=80,
-                 log_level=LOG_ERROR):
+                 credentials_file: str = DEFAULT_CREDENTIAL_LOCATION,
+                 connection_timeout: int = DEFAULT_CONNECTION_TIMEOUT_SECONDS,
+                 adhoc_ifconfig: tuple[str, str, str, str] = DEFAULT_ADHOC_IFCONFIG,
+                 adhoc_ssid: str = DEFAULT_ADHOC_SSID,
+                 adhoc_password: str = DEFAULT_ADHOC_PASSWORD,
+                 credentials_page_server_port: int = 80,
+                 log_level: int = LOG_ERROR):
         try:
             self.credentials = WifiCredentials.fromFile(credentials_file)
         except Exception:
@@ -195,7 +195,7 @@ class PicoWifi:
         while self.__wifi_connection.active():
             pass
 
-    def __log(self, level, str):
+    def __log(self, level: int, str: str):
         if self.log_level >= level:
             print(str)
 
@@ -212,7 +212,7 @@ class NoWifiCredentialsException(Exception):
         super().__init__(message)
 
 class WifiCredentials:
-    def __init__(self, ssid, password, filepath):
+    def __init__(self, ssid: str, password: str, filepath: str|None):
         if (ssid is None or ssid == ""):
             raise Exception("ssid cannot be None or empty string")
         if (password is None or password == ""):
@@ -222,11 +222,11 @@ class WifiCredentials:
         self.password = password
         self.filepath = filepath
 
-    def save(self, filepath=None):
-        if filepath is None and self.filepath is None:
-            raise Exception("Cannot write credentials if no filepath is present or passed")
-        
+    def save(self, filepath: str|None =None):
         destination = filepath if filepath is not None else self.filepath
+        
+        if destination is None:
+            raise Exception("Cannot write credentials if no filepath is present or passed")
 
         try:
             jsonData = self.__toJson()
@@ -311,10 +311,10 @@ ERROR_PAGE = """<!DOCTYPE html>
 
 class WifiCredentialsServer:
     def __init__(self,
-                 port=80,
-                 page=DEFAULT_RESPONSE_PAGE,
-                 error_page=ERROR_PAGE,
-                 log_level=LOG_ERROR):
+                 port: int = 80,
+                 page: str = DEFAULT_RESPONSE_PAGE,
+                 error_page: str = ERROR_PAGE,
+                 log_level: int = LOG_ERROR):
         self.port = port
         self.page = page
         self.error_page = error_page
@@ -362,7 +362,7 @@ class WifiCredentialsServer:
         self.terminate()
         return WifiCredentials(credentials["ssid"], credentials["password"], None)
 
-    def __getRequestHeaders(self, headerBlock):
+    def __getRequestHeaders(self, headerBlock: str):
         splitHeaders = [header.split(":") for header in headerBlock.split("\r\n")]
 
         requestLine = splitHeaders[0][0].split()
@@ -377,7 +377,7 @@ class WifiCredentialsServer:
 
     # Get the entire body from an HTTP request using the Content-Length header's value
     # Final argument is any body data that was received alongside the headers
-    def __getRequestBody(self, connection, headers, requestBody):
+    def __getRequestBody(self, connection: socket.socket, headers: dict, requestBody: str):
         contentLength = int(headers["Content-Length"]) if "Content-Length" in headers else 0
         body = requestBody
 
@@ -391,7 +391,7 @@ class WifiCredentialsServer:
 
     # Decode x-www-form-urlencoded data that is present on the POST body
     # This probably works, except when it doesn't
-    def __urlDecode(self, toDecode):
+    def __urlDecode(self, toDecode: str):
         toDecode.replace("+", " ")
 
         chars = []
@@ -412,13 +412,13 @@ class WifiCredentialsServer:
 
         return "".join(chars)
 
-    def __respondWithInputPage(self, connection):
+    def __respondWithInputPage(self, connection: socket.socket):
         connection.send("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n")
         connection.send(self.page)
 
     # Parses out a set of credentials from the HTTP POST request body
     # Expects a form-encoded utf-8 string
-    def __parseCredentials(self, connection, postBody):
+    def __parseCredentials(self, connection: socket.socket, postBody: str):
         if postBody == "" or postBody is None:
             self.__sendBadRequest(connection, "Password and SSID cannot be empty")
             return None
@@ -441,13 +441,13 @@ class WifiCredentialsServer:
         connection.send("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n")
         return params
     
-    def __sendBadRequest(self, connection, errorMessage=None):
+    def __sendBadRequest(self, connection: socket.socket, errorMessage: str|None =None):
         page = self.error_page.replace("%CONTENT%", errorMessage) if errorMessage is not None else ""
         lengthHeader = f"\r\nContent-Length:{len(page)}" if errorMessage is not None else ""
 
         connection.send(f"HTTP/1.0 400 Bad Request\r\nContent-type: text/html; charset=\"utf-8\"{lengthHeader}\r\n\r\n{page}")
     
-    def __log(self, level, str):
+    def __log(self, level: int, str: str):
         if self.log_level >= level:
             print(str)
 
