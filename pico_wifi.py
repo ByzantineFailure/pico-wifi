@@ -122,27 +122,35 @@ class PicoWifi:
 
         while not self.connectedToWifi and timeout < self.connection_timeout:
             # We have to do this here since the status that indicates wrong password will go away shortly
-            # after
-            if self.__wifi_connection.status() == network.STAT_WRONG_PASSWORD:
-                raise IncorrectWifiPasswordException(f"Bad wifi password: {self.credentials.password}")
+            # after the connection fails.  This method will throw an exception and break the loop if there's
+            # a problem.
+            self.__checkWifiConnectionStatus(failIfNotConnected=False)
 
             timeout += 1
             self.__log(LOG_DEBUG, f"Not connected, sleeping for second #{timeout}")
             time.sleep_ms(1_000)
-        
+
+        self.__checkWifiConnectionStatus(failIfNotConnected=True)        
+
+    def __checkWifiConnectionStatus(self, failIfNotConnected: bool):
+        if self.credentials is None:
+            raise NoWifiCredentialsException()
+
         status = self.__wifi_connection.status()
 
         if status == network.STAT_GOT_IP:
             self.__connection_state = STA_CONNECTED
             self.__log(LOG_ERROR, f"Connected at ip: {self.__wifi_connection.ifconfig()}")
-        # Of course, we also check here in the off chance that this has occurred in the last second of our timeout
         elif status == network.STAT_WRONG_PASSWORD:
             self.__connection_state = STA_DISCONNECTED
             raise IncorrectWifiPasswordException(f"Bad wifi password: {self.credentials.password}")
-        else:
+        elif status == network.STAT_NO_AP_FOUND:
+            self.__connection_state = STA_DISCONNECTED
+            raise NoAccessPointFoundException(f"No access point found for SSID {self.credentials.ssid}")
+        elif failIfNotConnected:
             self.__connection_state = STA_DISCONNECTED
             raise UnknownWifiConnectionFailureException(f"Failed to connect; status = {status}")
-        
+
     def startAccessPoint(self):
         self.__turnOffWifi()
         self.__turnOnAdhoc()
@@ -201,6 +209,14 @@ class PicoWifi:
 
 class IncorrectWifiPasswordException(Exception):
     def __init__(self, message="Wifi password is incorrect"):
+        super().__init__(message)
+
+class WifiConnectionTimeoutException(Exception):
+    def __init__(self, message="Wifi connection timed out"):
+        super().__init__(message)
+
+class NoAccessPointFoundException(Exception):
+    def __init__(self, message="No access point found"):
         super().__init__(message)
 
 class UnknownWifiConnectionFailureException(Exception):
@@ -354,8 +370,10 @@ class WifiCredentialsServer:
 
             if(headers["method"] == "POST"):
                 credentials = self.__parseCredentials(connection, body)
-            if(headers["method"] == "GET"):
+            elif(headers["method"] == "GET"):
                 self.__respondWithInputPage(connection)
+            else:
+                self.__sendBadRequest(connection, f"Got unsupported HTTP method: {headers["method"]}")
 
             connection.close()
 

@@ -5,6 +5,7 @@ from pico_wifi import WifiCredentialsServer
 from pico_wifi import IncorrectWifiPasswordException
 from pico_wifi import UnknownWifiConnectionFailureException
 from pico_wifi import NoWifiCredentialsException
+from pico_wifi import NoAccessPointFoundException
 
 from pico_wifi import STA_DISCONNECTED
 from pico_wifi import STA_CONNECTING
@@ -25,5 +26,5 @@ __all__ = [
     "PicoWifi", "WifiCredentials", "WifiCredentialsServer",
     # Exception types
     "IncorrectWifiPasswordException", "UnknownWifiConnectionFailureException", 
-    "NoWifiCredentialsException"
+    "NoWifiCredentialsException", "NoAccessPointFoundException"
 ]

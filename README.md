@@ -43,7 +43,7 @@ All constructor parameters are accessible as properties.  Others are documented 
 | -------- | ----------- |
 | `connectedToWifi` | If the Pico W is currently connected to a wifi network |
 | `accessPointIsRunning` | If the Pico W is currently in AP mode |
-| `credentials` | A `WifiCredentials` instance used to connect to the internet.  Prefer using `getCredentials()` to set this instead of setting it manually.|
+| `credentials` | A `WifiCredentials` instance used to connect to the internet.  `getCredentials()` will set this after it gets them from the user.|
 | `connectionState` | What the status of the connection is at any given point.  Valid values below |
 
 Values for `connectionState` are:
@@ -57,7 +57,7 @@ Values for `connectionState` are:
 Top-level, basic call that strings together all other available class methods to make setting up wifi easy.
 
 In a `while True` loop, this will:
-* Call `connectToWifi()`
+* Call `connectToWifi()`.  If this succeeds, break from the loop and return
 * If this fails, call `startAccessPoint()` and fetch credentials for the next connection attempt via `getCredentials()`
 * Go back to the beginning
 
@@ -68,11 +68,16 @@ wifi.init()
 
 #### `PicoWifi.connectToWifi()`
 
-Attempt to connect to the wifi using the credentials present on the instance.  If no credentials are present (e.g. if `credentials_file` was not present and `getCredentials()` was not called), this method will throw a `NoWifiCredentialsException`.
+Attempt to connect to the wifi using the credentials present on the instance.
 
-If the wifi connection fails due to a bad password, this method will throw a `IncorrectWifiPasswordException`.
-
-If the wifi connection fails for any other reason, this method will throw an `UnknownWifiConnectionFailureException`.  The status code from the underlying `network` library will be present in the exception's message.
+* Turns off the access point if it is running
+* Turns on the wifi connection if it is not running
+* Checks if a `WifiCredentials` instance is present in the `credentials` property.  If there is none, throws a `NoWifiCredentialsException`
+* Attempts to connect to the wifi network with the values within `credentials`
+  * If the password is wrong, throws an `IncorrectWifiPasswordException`
+  * If there is no AP serving the SSID, throws a `NoAccessPointFoundException`
+  * If the connection times out or fails for some other reason, throws an `UnknownWifiConnectionFailureException` with the status code from the underlying connection in the message
+  * If the connection is formed successfully, returns
 
 Example:
 ```python
@@ -86,17 +91,26 @@ wifi.connectToWifi()
 
 Turns on the Pico W's wifi in access point mode and stands up an adhoc network using the parameters provided in the constructor.
 
+* Turns off the wifi connection, if it is active
+* Turns on the access point if it is not running
+
 #### `PicoWifi.getCredentials()`
 
-Turns on the wifi controller's `AP_IF` interface if it's not already running, and instantiates a `WifiCredentialsServer` which listens on `credentials_page_server_port` (see constructor params).
+Single call to get credentials from the user via a webpage served on an adhoc network.
 
-Writes the resulting `WifiCredentials` instance to `credentials_file` in flash memory, then returns it.
+* Turns off the wifi connection, if it is active.
+* Turns on the access point if it is not running.
+* Instantiates a `WifiCredentialsServer` which listens on `credentials_page_server_port` (see constructor params).
+* Calls `getCredentials()` on the `WifiCredentialsServer` instance.
+* Writes the resulting `WifiCredentials` to the `credentials` property
+* Returns the value of the `credentials` property
 
 #### `PicoWifi.clearCredentials()`
 
-Deletes any existing credentials from flash memory and clears any credentials set on the instance of `PicoWifi`.
+Clears any stored credentials.  This is useful when attempting to debug or remove known-bad credentials that are stored in flash.
 
-This is useful when attempting to debug or remove known-bad credentials that are stored in flash.
+* Deletes any existing credentials file at the path stored in the `credentials_file` property
+* Sets `credentials` to `None`
 
 ### WifiCredentialsServer
 
@@ -179,6 +193,7 @@ Logs are available at different granularities.  They will be printed to console 
 * `NoWifiCredentialsException` - Exception thrown if an attempt to connect to a wifi network is made before credentials are set.
 * `UnknownWifiConnectionFailureException` - Exception thrown if connecting to a wifi network fails for a reason the library does not explicitly handle.
 * `IncorrectWifiPasswordException` - Exception thrown if the wifi password is incorrect.
+* `NoAccessPointFoundException` - Exception thrown if attempting to connect to an SSID that the wifi device cannot find
 
 ## Troubleshooting
 
