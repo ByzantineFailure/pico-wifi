@@ -397,6 +397,8 @@ class WifiCredentialsServer:
         self.socket.bind(self.addr)
         self.socket.listen(1)
 
+        self.__log(LOG_DEBUG, f"Socket listening and bound to {self.addr}")
+
         credentials = None
 
         # This entire situation will eat shit if the HTTP request is malformed.
@@ -416,10 +418,13 @@ class WifiCredentialsServer:
             body = self.__getRequestBody(connection, headers, splitRequest[1])
 
             if(headers["method"] == "POST"):
+                self.__log(LOG_DEBUG, "Got a POST, parsing out credentials")
                 credentials = self.__parseCredentials(connection, body)
             elif(headers["method"] == "GET"):
+                self.__log(LOG_DEBUG, "Sending the input page")
                 self.__respondWithInputPage(connection)
             else:
+                self.__log(LOG_DEBUG, "Unrecognized HTTP method, sending the bad request page")
                 self.__sendBadRequest(connection, f"Got unsupported HTTP method: {headers["method"]}")
 
             connection.close()
@@ -438,6 +443,7 @@ class WifiCredentialsServer:
         headers["path"] = requestLine[1]
         headers["protocol"] = requestLine[2]
 
+        self.__log(LOG_DEBUG, f"Request Headers: {headers}")
         return headers
 
     # Get the entire body from an HTTP request using the Content-Length header's value
@@ -452,23 +458,29 @@ class WifiCredentialsServer:
             moreData = connection.recv(1024)
             body += moreData.decode("utf-8")
 
+        self.__log(LOG_DEBUG, f"Request body: {body}")
         return body
 
     # Decode x-www-form-urlencoded data that is present on the POST body
     # This probably works, except when it doesn't
-    def __urlDecode(self, toDecode: str):
-        toDecode.replace("+", " ")
+    def __urlDecode(self, input: str):
+        # Start by doing the easy thing
+        toDecode = input.replace("+", " ")
 
         chars = []
         i = 0
+        # Find and decode % characters from their hex
         while i < len(toDecode):
             if toDecode[i] == "%" and i + 2 < len(toDecode):
                 hex = toDecode[i+1:i+3]
                 try:
                     char = chr(int(hex, 16))
+                    self.__log(LOG_DEBUG, f"Decoded hex {toDecode[i+1:i+3]} at index {i} to {char}")
                     chars.append(char)
                     i += 3
                 except ValueError:
+                    self.__log(LOG_DEBUG, f"Failed to decode hex {toDecode[i+1:i+3]} at index {i}," +
+                               " appending %")
                     chars.append(toDecode[i])
                     i += 1
             else:
@@ -485,6 +497,7 @@ class WifiCredentialsServer:
     # Expects a form-encoded utf-8 string
     def __parseCredentials(self, connection: socket.socket, postBody: str):
         if postBody == "" or postBody is None:
+            self.__log(LOG_DEBUG, "Got a POST with no body, sending bad request page")
             self.__sendBadRequest(connection, "Password and SSID cannot be empty")
             return None
         
@@ -497,9 +510,11 @@ class WifiCredentialsServer:
             self.__sendBadRequest(connection, "Missing either password or ssid query param in submisssion")
             return None
         if params["password"] == "":
+            self.__log(LOG_DEBUG, "Password is empty, sending bad request page")
             self.__sendBadRequest(connection, "Password cannot be empty")
             return None
         if params["ssid"] == "":
+            self.__log(LOG_DEBUG, "SSID is empty, sending bad request page")
             self.__sendBadRequest(connection, "SSID cannot be empty")
             return None
 
@@ -519,7 +534,7 @@ class WifiCredentialsServer:
 # Testing
 """
 if __name__ == "__main__":
-    wifi = PicoWifi()
+    wifi = PicoWifi(log_level=LOG_DEBUG)
     wifi.clearCredentials()
     wifi.init()
 """

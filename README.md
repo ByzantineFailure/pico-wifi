@@ -3,18 +3,22 @@ Small MicroPython library to help a Raspberry Pi Pico W connect to the internet 
 
 Tested and running on a Raspberry Pi Pico W.  May work on a Pico 2 W, entirely untested.
 
-## Usage
+## Basic Usage
 ```
 import pico_wifi
 
 wifi = pico_wifi.PicoWifi()
 wifi.init()
 ```
-Connect to the wifi network that it stands up ("PicoWifi Adhoc", passwwrd "1234567890").  Open a browser and connect to the IP that has been assigned to the Pico (first value in the tuple, mine defaults to `192.168.4.1`) via http to see the credentials page (e.g. `http://192.168.4.1`).
+Connect to the wifi network that it stands up.  By default the SSID is `PicoWifi Adhoc` and the password is `1234567890`).
+
+Open a browser and navigate via `http` to the IP that has been assigned to the Pico - this is the first value in the tuple that is printed to the console (mine defaults to `192.168.4.1`, so the address is `http://192.168.4.1`).  This will display the credentials page.  Enter your credentials and hit "connect" to connect to the network you've specified.
 
 **CONNECTING VIA `https://` WILL NOT WORK.**  Most browsers will try to do this automatically, so make sure you've added the `http://` explicitly.
 
-Advanced users who want control of how their connection is set up may use the methods exposed on any of the classes below.
+If there is some error connecting, it should be printed out to the console.
+
+Advanced users who want control of how their connection is set up may use the methods and parameters exposed on any of the classes below.
 
 ## API
 
@@ -33,7 +37,7 @@ It is recommended to use named parameters when constructing an instance and let 
 | `adhoc_ssid` | `"PicoWifi Adhoc"`| SSID for the adhoc network. |
 | `adhoc_password` | `"1234567890"` | Password for the adhoc network. A password that is too short may cause all auth to fail! |
 | `credentials_page_server_port` | `80` | Port to run the credentials HTTP Server on. |
-| `log_level` | `pico_wifi.LOG_ERROR` | Verbosity of logging.  See possible values below.  If you're having problems, consider setting this to `pico_wifi.LOG_DEBUG` to see more information |
+| `log_level` | `LOG_ERROR` | Verbosity of logging.  See possible values below.  If you're having problems, consider setting this to `LOG_INFO` or `LOG_DEBUG` to see more information |
 | `adhoc_ifconfig` | `None` | **CURRENTLY NON-FUNCTIONAL** Parameters for `ifconfig` called on the AP.  Used to set IP, subnet, etc. |
 
 #### Properties
@@ -124,7 +128,7 @@ Class that stands up a small web server responsible for getting wifi credentials
 | `port`    | `80`    | The port the webserver should listen on.  Defaults to 80 (HTTP default port) |
 | `page`    | `"<html>...elided...</html>"` | A string which contains an HTML page to return when GET is called at any path on the server. |
 | `error_page` | `"<html>...elided...</html>"` | A string which contains an HTML page to return when an error occurs during form submission |
-| `log_level` | `pico_wifi.LOG_ERROR` | Verbosity of logging.  See possible values below. |
+| `log_level` | `LOG_ERROR` | Verbosity of logging.  See possible values below. |
 
 #### `WifiCredentialsServer.getCredentials()`
 
@@ -186,8 +190,8 @@ Logs are available at different granularities.  They will be printed to console 
 
 * `LOG_NONE` - Log nothing at all to console.  Silent.
 * `LOG_ERROR` - Log only errors and high-importance messages like the ip of the device.  Default value.
-* `LOG_INFO` - Log events of interest without significant detail
-* `LOG_DEBUG` - Log everything to assist with debugging
+* `LOG_INFO` - Log events of interest without significant detail.  Recommended debugging mode for users.
+* `LOG_DEBUG` - Log everything to assist with debugging.  Highly-verbose, intended for debugging the library.  May be useful if you're writing your own form submission page or error page.
 
 ### Exceptions
 
@@ -206,7 +210,7 @@ Things I came across when building this, and general notes:
 * After a successful connnection to a network, the Pico will not actually accept new credentials for that same network.  You'll have to remove power from the device to get it to accept new credentials.
 * There is a mysterious status that can be returned from `status()` on the WLAN interface with a value of `2`.  This is between `network.STAT_CONNECTING` and `network.STAT_GOT_IP`.  This library handles this case, but uh... watch out for that.
 * `ifconfig()` straight-up doesn't work in AP mode: https://github.com/micropython/micropython/issues/17401
-* This project involved building a minimally-featured HTTP server from scratch.  There may be bugs with non-roman characters, please feel free to report an issue on this repo with a repro case that includes your SSID+Password.  (I know, credentials on the open web, sorry :( )
+* This project involved building a minimally-featured HTTP server from scratch.  There may be bugs with non-ASCII characters used in SSIDs and passwords.  Please feel free to report an issue on this repo with a repro case that includes your SSID+Password, or at least the characters that are causing a problem.  (I know, credentials on the open web, sorry :( )
 
 ## TODOs
 
@@ -220,3 +224,5 @@ Things I came across when building this, and general notes:
 This library was built to help my husband out on a personal project.  You're welcome to use it, I'm open to PRs and external contributions, and may even try to resolve issues depending upon how much time I have on my hands.
 
 However, if it doesn't meet your needs, I encourage you to fork it!  My time is limited and the odds of me adding any features that aren't relevant to our project(s) are... low.  I'd love to accept any contributions folks may have, though!
+
+I've done my best to make the simple webpage accessible using semantic HTML and some basic CSS-based focus indicators.  If you have an a11y-focused issue with the credentials page, please file it and I'll do my best to fix it ASAP.
