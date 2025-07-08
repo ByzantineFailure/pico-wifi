@@ -32,6 +32,7 @@ It is recommended to use named parameters when constructing an instance and let 
 | `adhoc_ssid` | `"PicoWifi Adhoc"`| SSID for the adhoc network. |
 | `adhoc_password` | `"1234567890"` | Password for the adhoc network. A password that is too short may cause all auth to fail! |
 | `credentials_page_server_port` | `80` | Port to run the credentials HTTP Server on. |
+| `log_level` | `pico_wifi.LOG_ERROR` | Verbosity of logging.  See possible values below.  If you're having problems, consider setting this to `pico_wifi.LOG_DEBUG` to see more information |
 | `adhoc_ifconfig` | `None` | **CURRENTLY NON-FUNCTIONAL** Parameters for `ifconfig` called on the AP.  Used to set IP, subnet, etc. |
 
 #### Properties
@@ -108,6 +109,7 @@ Class that stands up a small web server responsible for getting wifi credentials
 | `port`    | `80`    | The port the webserver should listen on.  Defaults to 80 (HTTP default port) |
 | `page`    | `"<html>...elided...</html>"` | A string which contains an HTML page to return when GET is called at any path on the server. |
 | `error_page` | `"<html>...elided...</html>"` | A string which contains an HTML page to return when an error occurs during form submission |
+| `log_level` | `pico_wifi.LOG_ERROR` | Verbosity of logging.  See possible values below. |
 
 #### `WifiCredentialsServer.getCredentials()`
 
@@ -163,14 +165,45 @@ Reads the file at `path` and constructs an instance of `WifiCredentials` from it
 credentials = WifiCredentials.fromFile("wifi.json")
 ```
 
+### Log Levels
+
+Logs are available at different granularities.  They will be printed to console depending upon the `log_level` value of classes that support it.
+
+* `LOG_NONE` - Log nothing at all to console.  Silent.
+* `LOG_ERROR` - Log only errors and high-importance messages like the ip of the device.  Default value.
+* `LOG_INFO` - Log events of interest without significant detail
+* `LOG_DEBUG` - Log everything to assist with debugging
+
 ### Exceptions
 
 * `NoWifiCredentialsException` - Exception thrown if an attempt to connect to a wifi network is made before credentials are set.
 * `UnknownWifiConnectionFailureException` - Exception thrown if connecting to a wifi network fails for a reason the library does not explicitly handle.
 * `IncorrectWifiPasswordException` - Exception thrown if the wifi password is incorrect.
 
+## Troubleshooting
+
+Things I came across when building this, and general notes:
+
+* If you're having trouble determining what's up, try setting the `log_level` parameter to `pico_wifi.LOG_DEBUG` to get more information.
+* After a successful connnection to a network, the Pico will not actually accept new credentials for that same network.  You'll have to remove power from the device to get it to accept new credentials.
+* There is a mysterious status that can be returned from `status()` on the WLAN interface with a value of `2`.  This is between `network.STAT_CONNECTING` and `network.STAT_GOT_IP`.  This library handles this case, but uh... watch out for that.
+* `ifconfig()` straight-up doesn't work in AP mode: https://github.com/micropython/micropython/issues/17401
+* This project involved building a minimally-featured HTTP server from scratch.  There may be bugs with non-roman characters, please feel free to report an issue on this repo with a repro case that includes your SSID+Password.  (I know, credentials on the open web, sorry :( )
+
+## TODOs
+
+* Get `ifconfig` parameters for AP mode working.  Setting a consistent IP is important
+  * Blocked on https://github.com/micropython/micropython/issues/17401
+* Prettify the credentials page.  Basic CSS will go a long way
+* Expose the last connection error to the user on the credentials page
+* Document expectations such as "The AP will disconnect" on the user page
+* Write up a guide on how to use `asyncio` to multithread this
+* Any kind of testing.  At all. 
+
+
+
 ## Author's Notes
 
 This library was built to help my husband out on a personal project.  You're welcome to use it, I'm open to PRs and external contributions, and may even try to resolve issues depending upon how much time I have on my hands.
 
-However, if it doesn't meet your needs, I encourage you to fork it!  I'd love to accept any contributions folks may have, but my time is limited and odds of me adding features that aren't relevant to our project(s) are reasonably low.
+However, if it doesn't meet your needs, I encourage you to fork it!  My time is limited and the odds of me adding any features that aren't relevant to our project(s) are... low.  I'd love to accept any contributions folks may have, though!

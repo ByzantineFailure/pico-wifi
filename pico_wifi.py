@@ -147,6 +147,7 @@ class PicoWifi:
         if status == network.STAT_GOT_IP:
             self.__connection_state = STA_CONNECTED
             self.__log(LOG_ERROR, f"Connected at ip: {self.__wifi_connection.ifconfig()}")
+        # Of course, we also check here in the off chance that this has occurred in the last second of our timeout
         elif status == network.STAT_WRONG_PASSWORD:
             self.__connection_state = STA_DISCONNECTED
             raise IncorrectWifiPasswordException(f"Bad wifi password: {self.credentials.password}")
