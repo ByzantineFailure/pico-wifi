@@ -226,3 +226,5 @@ This library was built to help my husband out on a personal project.  You're wel
 However, if it doesn't meet your needs, I encourage you to fork it!  My time is limited and the odds of me adding any features that aren't relevant to our project(s) are... low.  I'd love to accept any contributions folks may have, though!
 
 I've done my best to make the simple webpage accessible using semantic HTML and some basic CSS-based focus indicators.  If you have an a11y-focused issue with the credentials page, please file it and I'll do my best to fix it ASAP.
+
+And finally, a reminder to myself: [It's okay for your open-source library to be a bit shitty](https://www.drmaciver.com/2015/04/its-ok-for-your-open-source-library-to-be-a-bit-shitty/)
