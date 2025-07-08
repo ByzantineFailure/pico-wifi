@@ -173,4 +173,4 @@ credentials = WifiCredentials.fromFile("wifi.json")
 
 This library was built to help my husband out on a personal project.  You're welcome to use it, I'm open to PRs and external contributions, and may even try to resolve issues depending upon how much time I have on my hands.
 
-However, if it doesn't meet your needs, I encourage you to fork it!  My time is limited I'd love to accept any contributions folks may have, but my time is limited and odds of me adding features are reasonably low.
+However, if it doesn't meet your needs, I encourage you to fork it!  I'd love to accept any contributions folks may have, but my time is limited and odds of me adding features that aren't relevant to our project(s) are reasonably low.
