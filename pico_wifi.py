@@ -11,18 +11,6 @@ DEFAULT_ADHOC_SSID = "PicoWifi Adhoc"
 DEFAULT_ADHOC_PASSWORD = "1234567890"
 DEFAULT_ADHOC_IFCONFIG = ("192.168.1.1", "255.255.255.0", "192.168.1.1", "8.8.8.8")
 
-__all__ = [
-    # Statuses for PicoWifi
-    "STA_DISCONNECTED", "STA_CONNECTING", "STA_CONNECTED", "STA_ACCESSPOINT",
-    # Log level constants
-    "LOG_NONE", "LOG_ERROR", "LOG_INFO", "LOG_DEBUG",
-    # Main classes
-    "PicoWifi", "WifiCredentials", "WifiCredentialsServer",
-    # Exception types
-    "IncorrectWifiPasswordException", "UnknownWifiConnectionFailureException", 
-    "NoWifiCredentialsException"
-]
-
 # Status values for the network state
 STA_DISCONNECTED = 1
 STA_CONNECTING = 2
