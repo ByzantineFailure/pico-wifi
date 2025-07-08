@@ -14,6 +14,8 @@ DEFAULT_ADHOC_IFCONFIG = ("192.168.1.1", "255.255.255.0", "192.168.1.1", "8.8.8.
 __all__ = [
     # Statuses for PicoWifi
     "STA_DISCONNECTED", "STA_CONNECTING", "STA_CONNECTED", "STA_ACCESSPOINT",
+    # Log level constants
+    "LOG_NONE", "LOG_ERROR", "LOG_INFO", "LOG_DEBUG",
     # Main classes
     "PicoWifi", "WifiCredentials", "WifiCredentialsServer",
     # Exception types
@@ -27,7 +29,13 @@ STA_CONNECTING = 2
 STA_CONNECTED = 3
 STA_ACCESSPOINT = 4
 
-# Must be a singleton since it has access to the network hardware
+# Log levels
+LOG_NONE = 1
+LOG_ERROR = 2
+LOG_INFO = 3
+LOG_DEBUG = 4
+
+# Should probably be a singleton since it has access to the network hardware
 class PicoWifi:
     def __init__(self,
                  credentials_file=DEFAULT_CREDENTIAL_LOCATION,
@@ -35,13 +43,14 @@ class PicoWifi:
                  adhoc_ifconfig=DEFAULT_ADHOC_IFCONFIG,
                  adhoc_ssid=DEFAULT_ADHOC_SSID,
                  adhoc_password=DEFAULT_ADHOC_PASSWORD,
-                 credentials_page_server_port=80):
+                 credentials_page_server_port=80,
+                 log_level=LOG_ERROR):
         try:
             self.credentials = WifiCredentials.fromFile(credentials_file)
         except Exception:
-            #print("Cannot open credentials file.  This is expected if no credentials have been stored.")
             self.credentials = None
-       
+
+        self.log_level = log_level
         self.credentials_file = credentials_file
 
         self.adhoc_ifconfig = adhoc_ifconfig
@@ -61,24 +70,25 @@ class PicoWifi:
     def init(self):
         while True:
             try:
-                print("Connecting to wifi...")
+                self.__log(LOG_INFO, "Connecting to wifi...")
                 self.connectToWifi()
-                print("Connected!")
+                self.__log(LOG_INFO, "Connected!")
                 return
             except NoWifiCredentialsException:
-                print("No credentials present")
+                self.__log(LOG_ERROR,"No credentials present")
             except IncorrectWifiPasswordException:
-                print("Password is incorrect")
+                self.__log(LOG_ERROR, "Password is incorrect")
             except UnknownWifiConnectionFailureException as exc:
-                print(f"Some unknown failure connecting to the wifi network: {str(exc)}")
+                self.__log(LOG_ERROR, f"Some unknown failure connecting to the wifi network: {str(exc)}")
 
-            print("Starting access point...") 
+            self.__log(LOG_INFO, "Starting access point...") 
             self.startAccessPoint()
             self.credentials = self.getCredentials()
 
     @property            
     def connectedToWifi(self):
-        return self.__wifi_connection.active() and self.__wifi_connection.isconnected()
+        return (self.__wifi_connection.active() 
+                and self.__wifi_connection.isconnected())
 
     @property 
     def accessPointIsRunning(self):
@@ -99,7 +109,7 @@ class PicoWifi:
         if not self.accessPointIsRunning:
             self.startAccessPoint()
 
-        credentials = WifiCredentialsServer(port=self.credentials_page_server_port).getCredentials()
+        credentials = WifiCredentialsServer(port=self.credentials_page_server_port, log_level=self.log_level).getCredentials()
         credentials.filepath = self.credentials_file
         credentials.save()
 
@@ -117,32 +127,26 @@ class PicoWifi:
         # Disconnect doesn't care if there's no connection when we call it, so that's good
         self.__wifi_connection.disconnect()
 
-        print(f"Credentials - SSID: {self.credentials.ssid}; Password: {self.credentials.password}")
+        self.__log(LOG_DEBUG, f"Credentials - SSID: {self.credentials.ssid}; Password: {self.credentials.password}")
         self.__wifi_connection.connect(self.credentials.ssid, self.credentials.password)        
         
         timeout = 0
 
-        while self.__wifi_connection.status() == network.STAT_CONNECTING and timeout < self.connection_timeout:
-            # If we increment timeout within the if statement after the sleep, the Pico W hangs
-            # Increment it here instead.  ...idk, man
+        while not self.connectedToWifi and timeout < self.connection_timeout:
+            # We have to do this here since the status that indicates wrong password will go away shortly
+            # after
+            if self.__wifi_connection.status() == network.STAT_WRONG_PASSWORD:
+                raise IncorrectWifiPasswordException(f"Bad wifi password: {self.credentials.password}")
+
             timeout += 1
-            if self.__wifi_connection.isconnected() == False:
-                print(f"Not connected, sleeping for second #{timeout}")
-                time.sleep_ms(1_000)
+            self.__log(LOG_DEBUG, f"Not connected, sleeping for second #{timeout}")
+            time.sleep_ms(1_000)
         
         status = self.__wifi_connection.status()
 
-        if self.__wifi_connection.isconnected() == False:
-            self.__connection_state = STA_DISCONNECTED
-
-            if status == network.STAT_WRONG_PASSWORD:
-                raise IncorrectWifiPasswordException(f"Bad wifi password: {self.credentials.password}")
-
-            raise UnknownWifiConnectionFailureException(f"Failed to connect; status = {status}")
-        
         if status == network.STAT_GOT_IP:
             self.__connection_state = STA_CONNECTED
-            print(f"Connected at ip: {self.__wifi_connection.ifconfig()}")
+            self.__log(LOG_ERROR, f"Connected at ip: {self.__wifi_connection.ifconfig()}")
         elif status == network.STAT_WRONG_PASSWORD:
             self.__connection_state = STA_DISCONNECTED
             raise IncorrectWifiPasswordException(f"Bad wifi password: {self.credentials.password}")
@@ -157,13 +161,15 @@ class PicoWifi:
         self.__connection_state = STA_ACCESSPOINT
 
         ifconfig = self.__adhoc_ap.ifconfig()
-        print(f"Access point active, ifconfig: {ifconfig}")
+        self.__log(LOG_ERROR, f"Access point active, ifconfig: {ifconfig}")
 
     def __setWifiConfig(self):
         self.__wifi_connection.ipconfig(dhcp4=True)
 
     def __setAdhocConfig(self):
         self.__adhoc_ap.config(essid=self.adhoc_ssid, password=self.adhoc_password)
+        # Disabled because of a bug in micropython
+        # https://github.com/micropython/micropython/issues/17401
         #self.__adhoc_ap.ifconfig(self.adhoc_ifconfig)
 
     def __turnOnAdhoc(self):
@@ -199,6 +205,10 @@ class PicoWifi:
         self.__wifi_connection.active(False)
         while self.__wifi_connection.active():
             pass
+
+    def __log(self, level, str):
+        if self.log_level >= level:
+            print(str)
 
 class IncorrectWifiPasswordException(Exception):
     def __init__(self, message="Wifi password is incorrect"):
@@ -314,10 +324,12 @@ class WifiCredentialsServer:
     def __init__(self,
                  port=80,
                  page=DEFAULT_RESPONSE_PAGE,
-                 error_page=ERROR_PAGE):
+                 error_page=ERROR_PAGE,
+                 log_level=LOG_ERROR):
         self.port = port
         self.page = page
         self.error_page = error_page
+        self.log_level = log_level
 
         self.addr = socket.getaddrinfo("0.0.0.0", port)[0][-1]
         self.socket = socket.socket()
@@ -337,9 +349,10 @@ class WifiCredentialsServer:
 
         # This entire situation will eat shit if the HTTP request is malformed.
         while credentials == None:
-            print("Listening for HTTP calls...")
+            self.__log(LOG_INFO, "Listening for HTTP calls...")
             connection, addr = self.socket.accept()
-            print("client connected from", addr)
+            self.__log(LOG_INFO, f"client connected from {addr}")
+
             raw_request = connection.recv(1024)
             request = raw_request.decode('utf-8')
 
@@ -423,10 +436,10 @@ class WifiCredentialsServer:
         
         splitParams = [param.split("=") for param in postBody.split("&")]
         params = {self.__urlDecode(param[0]): self.__urlDecode(param[1]) for param in splitParams}
-        print(f"parsed form data: {params}")
+        self.__log(LOG_DEBUG, f"parsed form data: {params}")
 
         if "password" not in params or "ssid" not in params:
-            print("Didn't get the right params, page problem!")
+            self.__log(LOG_ERROR, "Didn't get the right params, page problem!")
             self.__sendBadRequest(connection, "Missing either password or ssid query param in submisssion")
             return None
         if params["password"] == "":
@@ -444,9 +457,15 @@ class WifiCredentialsServer:
         lengthHeader = f"\r\nContent-Length:{len(page)}" if errorMessage is not None else ""
 
         connection.send(f"HTTP/1.0 400 Bad Request\r\nContent-type: text/html; charset=\"utf-8\"{lengthHeader}\r\n\r\n{page}")
+    
+    def __log(self, level, str):
+        if self.log_level >= level:
+            print(str)
 
 # Testing
+"""
 if __name__ == "__main__":
     wifi = PicoWifi()
     wifi.clearCredentials()
     wifi.init()
+"""
