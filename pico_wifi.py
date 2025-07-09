@@ -71,7 +71,7 @@ class PicoWifi:
 
             self.__log(LOG_INFO, "Starting access point...") 
             self.startAccessPoint()
-            self.credentials = self.getCredentials()
+            self.credentials = self.gatherCredentials()
 
     @property            
     def connectedToWifi(self):
@@ -93,11 +93,11 @@ class PicoWifi:
         self.credentials.clearFile()
         self.credentials = None
 
-    def getCredentials(self):
+    def gatherCredentials(self):
         if not self.accessPointIsRunning:
             self.startAccessPoint()
 
-        credentials = WifiCredentialsServer(port=self.credentials_page_server_port, log_level=self.log_level).getCredentials()
+        credentials = WifiCredentialsServer(port=self.credentials_page_server_port, log_level=self.log_level).gatherCredentials()
         credentials.filepath = self.credentials_file
         credentials.save()
 
@@ -393,7 +393,7 @@ class WifiCredentialsServer:
         self.socket.close()
 
     # Get credentials for a wifi network via a webpage that serves a form.
-    def getCredentials(self):
+    def gatherCredentials(self):
         self.socket.bind(self.addr)
         self.socket.listen(1)
 

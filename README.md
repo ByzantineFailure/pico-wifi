@@ -50,7 +50,7 @@ All constructor parameters are accessible as properties.  Others are documented 
 | -------- | ----------- |
 | `connectedToWifi` | If the Pico W is currently connected to a wifi network |
 | `accessPointIsRunning` | If the Pico W is currently in AP mode |
-| `credentials` | A `WifiCredentials` instance used to connect to the internet.  `getCredentials()` will set this after it gets them from the user.|
+| `credentials` | A `WifiCredentials` instance used to connect to the internet.  `gatherCredentials()` will set this after it gets them from the user.|
 | `connectionState` | What the status of the connection is at any given point.  Valid values below |
 
 Values for `connectionState` are:
@@ -65,7 +65,7 @@ Top-level, basic call that strings together all other available class methods to
 
 In a `while True` loop, this will:
 * Call `connectToWifi()`.  If this succeeds, break from the loop and return
-* If this fails, call `startAccessPoint()` and fetch credentials for the next connection attempt via `getCredentials()`
+* If this fails, call `startAccessPoint()` and fetch credentials for the next connection attempt via `gatherCredentials()`
 * Go back to the beginning
 
 ```python
@@ -100,21 +100,21 @@ Turns on the Pico W's wifi in access point mode and stands up an adhoc network u
 * Turns off the wifi connection, if it is active
 * Turns on the access point if it is not running
 
-#### `PicoWifi.getCredentials()`
+#### `PicoWifi.gatherCredentials()`
 
-Single call to get credentials from the user via a webpage served on an adhoc network.
+Single call to get credentials from the user via a webpage served on an adhoc network.  Saves the result to the `credentials` field of the `PicoWifi` instance.
 
 * Turns off the wifi connection, if it is active.
 * Turns on the access point if it is not running.
 * Instantiates a `WifiCredentialsServer` which listens on `credentials_page_server_port` (see constructor params).
-* Calls `getCredentials()` on the `WifiCredentialsServer` instance.
+* Calls `gatherCredentials()` on the `WifiCredentialsServer` instance.
 * Writes the resulting `WifiCredentials` to the `credentials` property
 * Returns the value of the `credentials` property
 
 Example usage:
 ```python
 wifi = PicoWifi()
-wifi.getCredentials()
+wifi.gatherCredentials()
 wifi.connectToWifi()
 ```
 
@@ -138,7 +138,7 @@ Class that stands up a small web server responsible for getting wifi credentials
 | `error_page` | `"<html>...elided...</html>"` | A string which contains an HTML page to return when an error occurs during form submission |
 | `log_level` | `LOG_ERROR` | Verbosity of logging.  See possible values below. |
 
-#### `WifiCredentialsServer.getCredentials()`
+#### `WifiCredentialsServer.gatherCredentials()`
 
 Starts a web server that listes on `port`.
 
@@ -152,7 +152,7 @@ Example usage which gets credentials from a user to connect to the internet:
 ```python
 wifi = PicoWifi()
 wifi.startAccessPoint()
-wifi.credentials = WifiCredentialsServer().getCredentials()
+wifi.credentials = WifiCredentialsServer().gatherCredentials()
 wifi.connectToWifi()
 ```
 
