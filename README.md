@@ -10,6 +10,8 @@ import pico_wifi
 wifi = pico_wifi.PicoWifi()
 wifi.init()
 ```
+If there are already credentials stored in flash from a prior run, this will connect you to the wifi (assuming the network is detected).  If there are no stored credentials:
+
 Connect to the wifi network that it stands up.  By default the SSID is `PicoWifi Adhoc` and the password is `1234567890`.
 
 Open a browser and navigate via `http` to the IP that has been assigned to the Pico - this is the first value in the tuple that is printed to the console (mine defaults to `192.168.4.1`, so the address is `http://192.168.4.1`).  This will display the credentials page.  Enter your credentials and hit "connect" to connect to the network you've specified.
