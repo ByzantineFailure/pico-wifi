@@ -146,6 +146,14 @@ Starts a web server that listes on `port`.
 
 If the values sent to `POST` are valid, the server will shut down and this method will return an instance of `WifiCredentials` that contains them.
 
+Example usage which gets credentials from a user to connect to the internet:
+```python
+wifi = PicoWifi()
+wifi.startAccessPoint()
+wifi.credentials = WifiCredentialsServer().getCredentials()
+wifi.connectToWifi()
+```
+
 #### `WifiCredentialsServer.terminate()`
 
 Tears down any running server and associated sockets and resources.
