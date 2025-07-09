@@ -10,7 +10,7 @@ import pico_wifi
 wifi = pico_wifi.PicoWifi()
 wifi.init()
 ```
-Connect to the wifi network that it stands up.  By default the SSID is `PicoWifi Adhoc` and the password is `1234567890`).
+Connect to the wifi network that it stands up.  By default the SSID is `PicoWifi Adhoc` and the password is `1234567890`.
 
 Open a browser and navigate via `http` to the IP that has been assigned to the Pico - this is the first value in the tuple that is printed to the console (mine defaults to `192.168.4.1`, so the address is `http://192.168.4.1`).  This will display the credentials page.  Enter your credentials and hit "connect" to connect to the network you've specified.
 
