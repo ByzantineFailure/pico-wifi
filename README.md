@@ -87,8 +87,8 @@ Attempt to connect to the wifi using the credentials present on the instance.
 Example:
 ```python
 wifi = PicoWifi()
-if wifi.credentials is None:
-    wifi.getCredentials()
+credentials = WifiCredentials(ssid="SSID", password="password", filepath=None)
+wifi.credentials = credentials
 wifi.connectToWifi()
 ```
 
