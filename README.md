@@ -109,6 +109,13 @@ Single call to get credentials from the user via a webpage served on an adhoc ne
 * Writes the resulting `WifiCredentials` to the `credentials` property
 * Returns the value of the `credentials` property
 
+Example usage:
+```python
+wifi = PicoWifi()
+wifi.getCredentials()
+wifi.connectToWifi()
+```
+
 #### `PicoWifi.clearCredentials()`
 
 Clears any stored credentials.  This is useful when attempting to debug or remove known-bad credentials that are stored in flash.
