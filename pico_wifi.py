@@ -64,10 +64,12 @@ class PicoWifi:
                 return
             except NoWifiCredentialsException:
                 self.__log(LOG_ERROR,"No credentials present")
-            except IncorrectWifiPasswordException:
-                self.__log(LOG_ERROR, "Password is incorrect")
+            except IncorrectWifiPasswordException as exc:
+                self.__log(LOG_ERROR, str(exc))
+            except NoAccessPointFoundException as exc:
+                self.__log(LOG_ERROR, str(exc))
             except UnknownWifiConnectionFailureException as exc:
-                self.__log(LOG_ERROR, f"Some unknown failure connecting to the wifi network: {str(exc)}")
+                self.__log(LOG_ERROR, str(exc))
 
             self.__log(LOG_INFO, "Starting access point...") 
             self.startAccessPoint()
