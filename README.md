@@ -1,7 +1,7 @@
 # pico-wifi
 Small MicroPython library to help a Raspberry Pi Pico W connect to the internet in a user-friendly way.
 
-Tested and running on a Raspberry Pi Pico W.  May work on a Pico 2 W, entirely untested.
+Tested and running on a Raspberry Pi Pico W with MicroPython 1.25.0.  May work on a Pico 2 W, entirely untested.
 
 ## Basic Usage
 ```
