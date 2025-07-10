@@ -62,13 +62,10 @@ class PicoWifi:
                 self.connectToWifi()
                 self.__log(LOG_INFO, "Connected!")
                 return
-            except NoWifiCredentialsException:
-                self.__log(LOG_ERROR,"No credentials present")
-            except IncorrectWifiPasswordException as exc:
-                self.__log(LOG_ERROR, str(exc))
-            except NoAccessPointFoundException as exc:
-                self.__log(LOG_ERROR, str(exc))
-            except UnknownWifiConnectionFailureException as exc:
+            except (NoWifiCredentialsException,
+                    IncorrectWifiPasswordException, 
+                    NoAccessPointFoundException, 
+                    UnknownWifiConnectionFailureException) as exc:
                 self.__log(LOG_ERROR, str(exc))
 
             self.__log(LOG_INFO, "Starting access point...") 
@@ -226,7 +223,7 @@ class UnknownWifiConnectionFailureException(Exception):
         super().__init__(message)
 
 class NoWifiCredentialsException(Exception):
-    def __init__(self, message="Tried to connect to wifi without passing any credentials"):
+    def __init__(self, message="No wifi credentials present"):
         super().__init__(message)
 
 class WifiCredentials:
