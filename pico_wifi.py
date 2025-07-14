@@ -157,7 +157,10 @@ class PicoWifi:
         self.__connection_state = STA_ACCESSPOINT
 
         ifconfig = self.__adhoc_ap.ifconfig()
-        self.__log(LOG_ERROR, f"Access point active, ifconfig: {ifconfig}")
+        self.__log(LOG_ERROR, "Access point active")
+        self.__log(LOG_ERROR, f"AP SSID: {self.adhoc_ssid}")
+        self.__log(LOG_ERROR, f"AP Password: {self.adhoc_password}")
+        self.__log(LOG_ERROR, f"AP ifconfig: {ifconfig}")
 
     def __setWifiConfig(self):
         self.__wifi_connection.ipconfig(dhcp4=True)
